@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lector de Códigos QR</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 50%, #5dade2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 30px auto;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .back-button {
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            border: 2px solid #ecf0f1;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            font-weight: 600;
+        }
+        .back-button:hover {
+            background: rgba(236, 240, 241, 0.9);
+            color: #2c3e50;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: white;
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+        .video-container {
+            position: relative;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 640px;
+            background: #2c3e50;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        #videoQR {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+        #canvasQR {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+        }
+        button:hover {
+            background: linear-gradient(135deg, #2980b9, #21618c);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        button:disabled {
+            background: linear-gradient(135deg, #bdc3c7, #95a5a6);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        #resultadoQR {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(236, 240, 241, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: 18px;
+            color: #2c3e50;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        #zonaQR {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(52, 152, 219, 0.2);
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #ecf0f1;
+            border: 1px solid rgba(52, 152, 219, 0.3);
+        }
+        .historial {
+            margin-top: 20px;
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .historial h3 {
+            color: #ecf0f1;
+            margin-top: 0;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        .historial-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            color: #bdc3c7;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .historial-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+        #mensajeErrorQR {
+            margin-top: 15px;
+            padding: 15px;
+            background: rgba(231, 76, 60, 0.2);
+            color: #ecf0f1;
+            border-radius: 8px;
+            display: none;
+            font-weight: 500;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+        @media (max-width: 768px) {
+            .container {
+                margin: 15px;
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            button {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="back-button" onclick="goBack()">
+            <i class="fas fa-arrow-left"></i> Volver
+        </button>
+        <h1><i class="fas fa-qrcode"></i> Lector de Códigos QR</h1>
+        
+        <div class="video-container">
+            <video id="videoQR" autoplay muted playsinline></video>
+            <canvas id="canvasQR"></canvas>
+        </div>
+        
+        <div class="controls">
+            <button id="iniciarCamara" onclick="iniciarCamara()">
+                <i class="fas fa-camera"></i> Iniciar Cámara
+            </button>
+            <button id="detenerCamara" onclick="detenerCamara()" disabled>
+                <i class="fas fa-stop"></i> Detener Cámara
+            </button>
+            <button id="toggleFlashlight" onclick="toggleFlashlight()" disabled>
+                <i class="fas fa-flashlight"></i> Linterna
+            </button>
+            <button onclick="limpiarHistorial()">
+                <i class="fas fa-trash"></i> Limpiar Historial
+            </button>
+        </div>
+        
+        <div id="resultadoQR">Esperando código QR...</div>
+        <div id="zonaQR"></div>
+        <div class="historial" id="historialQR"></div>
+        <div id="mensajeErrorQR"></div>
+    </div>
+
+    <script>
+        const videoQR = document.getElementById('videoQR');
+        const canvasQR = document.getElementById('canvasQR');
+        const ctxQR = canvasQR.getContext('2d');
+        const resultadoQR = document.getElementById('resultadoQR');
+        const zonaQR = document.getElementById('zonaQR');
+        const historialQR = document.getElementById('historialQR');
+        const mensajeErrorQR = document.getElementById('mensajeErrorQR');
+        const iniciarBtn = document.getElementById('iniciarCamara');
+        const detenerBtn = document.getElementById('detenerCamara');
+        const flashlightBtn = document.getElementById('toggleFlashlight');
+
+        let streamQR = null;
+        let procesandoQR = false;
+        let historialCodigos = [];
+        let flashlightOn = false;
+
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        async function iniciarCamara() {
+            try {
+                streamQR = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                videoQR.srcObject = streamQR;
+                
+                videoQR.onloadedmetadata = () => {
+                    canvasQR.width = videoQR.videoWidth;
+                    canvasQR.height = videoQR.videoHeight;
+                    detectarQRLoop();
+                };
+                
+                iniciarBtn.disabled = true;
+                detenerBtn.disabled = false;
+                flashlightBtn.disabled = false;
+                mensajeErrorQR.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Error al acceder a la cámara:', error);
+                mostrarError('Error al acceder a la cámara. Verifica los permisos.');
+            }
+        }
+
+        function detenerCamara() {
+            if (streamQR) {
+                streamQR.getTracks().forEach(track => track.stop());
+                streamQR = null;
+            }
+            
+            iniciarBtn.disabled = false;
+            detenerBtn.disabled = true;
+            flashlightBtn.disabled = true;
+            flashlightOn = false;
+            resultadoQR.textContent = 'Cámara detenida';
+            zonaQR.textContent = '';
+        }
+
+        function detectarQRLoop() {
+            if (!streamQR || procesandoQR) {
+                requestAnimationFrame(detectarQRLoop);
+                return;
+            }
+
+            try {
+                procesandoQR = true;
+                
+                if (videoQR.readyState === videoQR.HAVE_ENOUGH_DATA) {
+                    ctxQR.drawImage(videoQR, 0, 0, canvasQR.width, canvasQR.height);
+                    const imageData = ctxQR.getImageData(0, 0, canvasQR.width, canvasQR.height);
+                    const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                    if (code) {
+                        procesarCodigoQR(code.data);
+                    } else {
+                        resultadoQR.textContent = 'Buscando código QR...';
+                        zonaQR.textContent = '';
+                    }
+                }
+                
+                procesandoQR = false;
+                requestAnimationFrame(detectarQRLoop);
+                
+            } catch (error) {
+                procesandoQR = false;
+                requestAnimationFrame(detectarQRLoop);
+            }
+        }
+
+        function procesarCodigoQR(codigo) {
+            resultadoQR.textContent = `Código detectado: ${codigo}`;
+            
+            // Determinar zona basada en el código
+            let zona = determinarZona(codigo);
+            zonaQR.textContent = zona ? `Zona: ${zona}` : 'Zona no identificada';
+            
+            // Agregar al historial
+            agregarAlHistorial(codigo, zona);
+        }
+
+        function determinarZona(codigo) {
+            // Lógica simple para determinar zona basada en el código
+            if (codigo.includes('ZONA1') || codigo.includes('A')) return 'Zona A';
+            if (codigo.includes('ZONA2') || codigo.includes('B')) return 'Zona B';
+            if (codigo.includes('ZONA3') || codigo.includes('C')) return 'Zona C';
+            if (codigo.includes('ZONA4') || codigo.includes('D')) return 'Zona D';
+            
+            // Determinar por longitud o patrón
+            if (codigo.length <= 5) return 'Zona A';
+            if (codigo.length <= 10) return 'Zona B';
+            if (codigo.length <= 15) return 'Zona C';
+            return 'Zona D';
+        }
+
+        function agregarAlHistorial(codigo, zona) {
+            const timestamp = new Date().toLocaleString();
+            const item = { codigo, zona, timestamp };
+            
+            // Evitar duplicados recientes
+            const existe = historialCodigos.some(h => 
+                h.codigo === codigo && 
+                (new Date() - new Date(h.timestamp)) < 5000
+            );
+            
+            if (!existe) {
+                historialCodigos.unshift(item);
+                if (historialCodigos.length > 20) {
+                    historialCodigos = historialCodigos.slice(0, 20);
+                }
+                actualizarHistorial();
+            }
+        }
+
+        function actualizarHistorial() {
+            if (historialCodigos.length === 0) {
+                historialQR.innerHTML = '';
+                return;
+            }
+            
+            let html = '<h3><i class="fas fa-history"></i> Historial de Códigos</h3>';
+            historialCodigos.forEach(item => {
+                html += `
+                    <div class="historial-item">
+                        <strong>${item.codigo}</strong><br>
+                        <small>${item.zona || 'Sin zona'} - ${item.timestamp}</small>
+                    </div>
+                `;
+            });
+            historialQR.innerHTML = html;
+        }
+
+        function limpiarHistorial() {
+            historialCodigos = [];
+            historialQR.innerHTML = '';
+        }
+
+        function toggleFlashlight() {
+            if (!streamQR) return;
+            
+            const track = streamQR.getVideoTracks()[0];
+            const capabilities = track.getCapabilities();
+            
+            if (capabilities.torch) {
+                flashlightOn = !flashlightOn;
+                track.applyConstraints({
+                    advanced: [{ torch: flashlightOn }]
+                }).then(() => {
+                    flashlightBtn.innerHTML = flashlightOn ? 
+                        '<i class="fas fa-lightbulb"></i> Apagar Linterna' : 
+                        '<i class="fas fa-flashlight"></i> Linterna';
+                }).catch(error => {
+                    console.error('Error al controlar la linterna:', error);
+                    mostrarError('Error al controlar la linterna');
+                });
+            } else {
+                mostrarError('Este dispositivo no soporta linterna');
+            }
+        }
+
+        function mostrarError(mensaje) {
+            mensajeErrorQR.textContent = mensaje;
+            mensajeErrorQR.style.display = 'block';
+        }
+
+        // Limpiar recursos al salir
+        window.addEventListener('beforeunload', () => {
+            if (streamQR) {
+                streamQR.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html> 
